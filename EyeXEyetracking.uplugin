@@ -1,0 +1,20 @@
+{
+    "FileVersion" : 3,
+	
+	"FriendlyName" : "EyeX Unreal Engine Plugin",
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"CreatedBy" : "Fredrik Lindh",
+	"CreatedByURL" : "https://github.com/Temaran",
+	"EngineVersion" : 1579795,
+	"Description" : "A plugin to enable EyeX functionality in UE4",
+	"Category" : "Input",
+	
+    "Modules" :
+	[
+		{
+			"Name" : "EyeXEyetracking",
+			"Type" : "Developer"
+		}
+	]
+}
