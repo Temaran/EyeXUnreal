@@ -14,12 +14,6 @@
 #include <mutex>
 #include "eyex/EyeX.h"
 
-#if INTPTR_MAX == INT64_MAX
-#define WINDOW_HANDLE_FORMAT "%lld"
-#else
-#define WINDOW_HANDLE_FORMAT "%d"
-#endif
-
 class FEyeXHost
 {
 public:
