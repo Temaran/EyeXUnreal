@@ -14,7 +14,7 @@
 	[
 		{
 			"Name" : "EyeXEyetracking",
-			"Type" : "Developer"
+			"Type" : "Runtime"
 		}
 	]
 }

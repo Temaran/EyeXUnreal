@@ -12,6 +12,8 @@
 #pragma once
 
 #include "ModuleManager.h"
+#include "eyex/EyeX.h"
+#include "EyeXEyetrackingTypes.h"
 
 /**
  * The public interface to this module.  In most cases, this interface is only public to sibling modules 
@@ -39,6 +41,31 @@ public:
 	 */
 	static inline bool IsAvailable()
 	{
-		return FModuleManager::Get().IsModuleLoaded( "EyeXEyetrackingPlugin" );
+		return FModuleManager::Get().IsModuleLoaded( "EyeXEyetracking" );
 	}
+
+
+	/**
+	Public API
+	*/
+	
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FNewGazeDataEvent, const FVector2D&);   //parameter is the gaze point
+	virtual FNewGazeDataEvent& OnNewGazeData() = 0;
+
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FStatusChangedEvent, const bool&);   //parameter is whether it is connected or not
+	virtual FStatusChangedEvent& OnStatusChanged() = 0;
+
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FFocusedRegionChangedEvent, const int&);    //parameter is the id
+	virtual FFocusedRegionChangedEvent& OnFocusedRegionChanged() = 0;
+
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FRegionActivatedEvent, const int&);  //parameter is the id
+	virtual FRegionActivatedEvent& OnRegionActivated() = 0;
+	
+	// updates the collection (repository) of activatable regions.
+	virtual void SetActivatableRegions(const std::vector<ActivatableRegion>& regions) = 0;
+
+	// triggers an activation ("Direct Click").
+	// use this method if you want to bind the click command to a key other than the one used by 
+	// the EyeX Engine -- or to something other than a key press event.
+	virtual void TriggerActivation() = 0;
 };

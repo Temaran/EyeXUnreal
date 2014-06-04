@@ -12,3 +12,4 @@
 #pragma once
 
 #include "IEyeXEyetracking.h"
+#include "EyeXEyetrackingTypes.h"
