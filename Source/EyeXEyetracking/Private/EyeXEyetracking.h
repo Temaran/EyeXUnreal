@@ -34,8 +34,11 @@ public:
 
 	DECLARE_DERIVED_EVENT(FEyeXEyetracking, IEyeXEyetracking::FRegionActivatedEvent, FRegionActivatedEvent);  //parameter is the id
 	virtual FRegionActivatedEvent& OnRegionActivated() OVERRIDE{ return RegionActivatedEvent; }
-	
-	virtual void SetActivatableRegions(const std::vector<ActivatableRegion>& regions) OVERRIDE;
+
+	virtual int GetNextUniqueRegionId() OVERRIDE;
+
+	virtual void AddActivatableRegion(ActivatableRegion& newRegions) OVERRIDE;
+	virtual void RemoveActivatableRegion(const ActivatableRegion& region) OVERRIDE;
 	virtual void TriggerActivation() OVERRIDE;
 
 private:

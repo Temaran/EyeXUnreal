@@ -55,14 +55,18 @@ public:
 	DECLARE_EVENT_OneParam(IEyeXEyetracking, FStatusChangedEvent, const bool&);   //parameter is whether it is connected or not
 	virtual FStatusChangedEvent& OnStatusChanged() = 0;
 
-	DECLARE_EVENT_OneParam(IEyeXEyetracking, FFocusedRegionChangedEvent, const int&);    //parameter is the id
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FFocusedRegionChangedEvent, const int&);    //parameter is the new focused id
 	virtual FFocusedRegionChangedEvent& OnFocusedRegionChanged() = 0;
 
 	DECLARE_EVENT_OneParam(IEyeXEyetracking, FRegionActivatedEvent, const int&);  //parameter is the id
 	virtual FRegionActivatedEvent& OnRegionActivated() = 0;
 	
-	// updates the collection (repository) of activatable regions.
-	virtual void SetActivatableRegions(const std::vector<ActivatableRegion>& regions) = 0;
+	/**
+	 * When defining a new Activatable region, use this function to get a guaranteed unique id for it
+	 */
+	virtual int GetNextUniqueRegionId() = 0;
+	virtual void AddActivatableRegion(ActivatableRegion& newRegions) = 0;
+	virtual void RemoveActivatableRegion(const ActivatableRegion& region) = 0;
 
 	// triggers an activation ("Direct Click").
 	// use this method if you want to bind the click command to a key other than the one used by 

@@ -17,6 +17,18 @@ public:
 	virtual void Destroyed() OVERRIDE;
 	virtual void BeginPlay() OVERRIDE;
 	virtual void Tick(float DeltaTime) OVERRIDE;
+
+	virtual void FocusedObjectChanged(const int& NewFocusedId);
+
+private:
+	ActivatableRegion* MyRegion;
+	bool IsFocused;
+	float CurScalingAlpha;
+	FVector BaseScale;
+	FVector FocusedScale;
+
+	void UpdateRegion();
+	void UpdateFocus(float DeltaTime);
 };
 
 

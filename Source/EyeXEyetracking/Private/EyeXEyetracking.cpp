@@ -66,11 +66,30 @@ BOOL FEyeXEyetracking::InitializeGlobalInteractorSnapshot(TX_CONTEXTHANDLE hCont
 	return success;
 }
 
-void FEyeXEyetracking::SetActivatableRegions(const std::vector<ActivatableRegion>& regions)
+int FEyeXEyetracking::GetNextUniqueRegionId()
+{
+	static int IdCounter = 0;
+	return ++IdCounter;
+}
+
+void FEyeXEyetracking::AddActivatableRegion(ActivatableRegion& newRegion)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	_regions.assign(regions.begin(), regions.end());
+	_regions.push_back(newRegion);
+}
+
+void FEyeXEyetracking::RemoveActivatableRegion(const ActivatableRegion& region)
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+
+	auto index = 0;
+	for (auto curRegion : _regions)
+	{
+		if (&curRegion == &region)
+			break;
+	}
+	_regions.erase(_regions.begin() + index);
 }
 
 void FEyeXEyetracking::TriggerActivation()

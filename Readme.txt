@@ -43,8 +43,11 @@ Then, to use this plugin:
 6. Regenerate your solution using the UE4 shell extension
 7. Build the project
 8. Start the editor and open the plugin viewer (can be found under the windows->Plugins menu)
-9. Program against the API using the provided singleton  FEyeXEyetracking::GetHost().METHODYOUWANTTOCALL();
-10. HAVE FUN!!!
+9. Add a reference to the module in your build script, the relevant row might look something like (Your buildfile is probably called something like MYPROJECT.Build.cs: 
+    PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EyeXEyetracking" });
+
+10. Program against the API using the provided singleton  FEyeXEyetracking::GetHost().METHODYOUWANTTOCALL();
+11. HAVE FUN!!!
 
 
 
