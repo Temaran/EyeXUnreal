@@ -18,6 +18,7 @@ public:
 	virtual void BeginPlay() OVERRIDE;
 	virtual void Tick(float DeltaTime) OVERRIDE;
 
+	UFUNCTION(BlueprintCallable, Category = Eyetracking)
 	virtual void OnGazeData(const FVector2D& gazePoint);
 
 private:

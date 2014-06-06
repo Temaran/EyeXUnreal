@@ -30,5 +30,3 @@ private:
 	void UpdateRegion();
 	void UpdateFocus(float DeltaTime);
 };
-
-

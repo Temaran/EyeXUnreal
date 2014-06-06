@@ -29,6 +29,7 @@ namespace UnrealBuildTool.Rules
 		{
 			PublicIncludePaths.AddRange(
 				new string[] {
+                    "EyeXEyetracking/Public"
 					// ... add public include paths required here ...
 				}
 				);
