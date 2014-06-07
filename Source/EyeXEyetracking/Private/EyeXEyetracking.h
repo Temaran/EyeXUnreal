@@ -11,9 +11,8 @@
 
 #pragma once
 
-#include "EyeXEyetrackingPrivatePCH.h"
+#include "IEyeXEyetracking.h"
 #include <mutex>
-#include "eyex/EyeX.h"
 
 class FEyeXEyetracking : public IEyeXEyetracking
 {

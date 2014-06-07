@@ -11,5 +11,7 @@
 
 #pragma once
 
+
+#include "Engine.h"
 #include "IEyeXEyetracking.h"
 #include "EyeXEyetrackingTypes.h"

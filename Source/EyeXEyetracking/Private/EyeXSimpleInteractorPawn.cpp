@@ -1,7 +1,6 @@
 #include "EyeXEyetrackingPrivatePCH.h"
 
 #include <limits>
-#include "Engine.h"
 #include "GameFramework/Pawn.h"
 #include "EyeXSimpleInteractorPawn.h"
 
