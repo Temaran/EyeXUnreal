@@ -8,8 +8,8 @@
  * This is only an example of how to set it up, don't use this as an example of how to do gaze interaction ;)
  */
 
-UCLASS(MinimalAPI, Blueprintable, BlueprintType)
-class AEyeXSimpleGazePawn : public APawn
+UCLASS(Blueprintable, BlueprintType)
+class EYEXEYETRACKING_API AEyeXSimpleGazePawn : public APawn
 {
 	GENERATED_UCLASS_BODY()
 

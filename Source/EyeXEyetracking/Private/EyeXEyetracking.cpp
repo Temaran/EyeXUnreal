@@ -72,24 +72,41 @@ int FEyeXEyetracking::GetNextUniqueRegionId()
 	return ++IdCounter;
 }
 
-void FEyeXEyetracking::AddActivatableRegion(ActivatableRegion& newRegion)
+void FEyeXEyetracking::AddInteractor(IEyeXInteractorInterface& newInteractor)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	_regions.push_back(newRegion);
+	if (_interactorToId.Contains(&newInteractor))
+	{
+		UE_LOG(EyetrackingLog, Warning, TEXT("Interactor already added to the API!"));
+		RemoveInteractor(newInteractor);
+	}
+
+	auto newId = GetNextUniqueRegionId();
+	_interactorToId.Add(&newInteractor, newId);
+	_idToInteractor.Add(newId, &newInteractor);
 }
 
-void FEyeXEyetracking::RemoveActivatableRegion(const ActivatableRegion& region)
+void FEyeXEyetracking::RemoveInteractor(IEyeXInteractorInterface& interactorToRemove)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
-	auto index = 0;
-	for (auto curRegion : _regions)
+	if (_interactorToId.Contains(&interactorToRemove))
 	{
-		if (&curRegion == &region)
-			break;
+		auto id = _interactorToId[&interactorToRemove];
+		_interactorToId.Remove(&interactorToRemove);
+		_idToInteractor.Remove(id);
 	}
-	_regions.erase(_regions.begin() + index);
+}
+
+void FEyeXEyetracking::SetSceneViewProvider(IEyeXSceneViewProviderInterface* NewProvider)
+{
+	_sceneViewProvider = NewProvider;
+}
+
+IEyeXInteractorInterface* FEyeXEyetracking::GetFocusedInteractor()
+{
+	return _focusedInteractor;
 }
 
 void FEyeXEyetracking::TriggerActivation()
@@ -192,21 +209,54 @@ void FEyeXEyetracking::HandleQuery(TX_CONSTHANDLE hAsyncData)
 		params.EnableTentativeFocus = false;
 
 		// iterate through all regions and create interactors for those that overlap with the query bounds.
-		for (auto region : _regions)
+		for (auto pair : _interactorToId)
 		{
-			EyeXRect regionBounds(region.bounds.left, region.bounds.top, region.bounds.right, region.bounds.bottom);
+			FVector Origin;
+			FVector Extents;
+			
+			pair.Key->GetBounds(Origin, Extents);
+
+			FSceneView* SceneView = _sceneViewProvider->GetSceneView();			
+
+			FVector2D ExtentPoints[8];
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, Extents.Y, Extents.Z), ExtentPoints[0]); //Right Top Front
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, Extents.Y, -Extents.Z), ExtentPoints[1]); //Right Top Back
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, -Extents.Y, Extents.Z), ExtentPoints[2]); //Right Bottom Front
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, -Extents.Y, -Extents.Z), ExtentPoints[3]); //Right Bottom Back
+			SceneView->WorldToPixel(Origin + FVector(-Extents.X, Extents.Y, Extents.Z), ExtentPoints[4]); //Left Top Front
+			SceneView->WorldToPixel(Origin + FVector(-Extents.X, Extents.Y, -Extents.Z), ExtentPoints[5]); //Left Top Back
+			SceneView->WorldToPixel(Origin + FVector(-Extents.X, -Extents.Y, Extents.Z), ExtentPoints[6]); //Left Bottom Front
+			SceneView->WorldToPixel(Origin + FVector(-Extents.X, -Extents.Y, -Extents.Z), ExtentPoints[7]); //Left Bottom Back
+
+			FVector2D TopLeft = FVector2D(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+			FVector2D BottomRight = FVector2D(std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
+
+			for (auto Point : ExtentPoints)
+			{
+				if (Point.X < TopLeft.X)
+					TopLeft.X = Point.X;
+				else if (Point.X > BottomRight.X)
+					BottomRight.X = Point.X;
+
+				if (Point.Y < TopLeft.Y)
+					TopLeft.Y = Point.Y;
+				else if (Point.Y > BottomRight.Y)
+					BottomRight.Y = Point.Y;
+			}
+
+			EyeXRect regionBounds(TopLeft.X, TopLeft.Y, BottomRight.X, BottomRight.Y);
 
 			if (EyeXRect::Intersects(queryBounds, regionBounds))
 			{
 				TX_HANDLE hInteractor(TX_EMPTY_HANDLE);
 
-				sprintf_s(stringBuffer, bufferSize, "%d", region.id);
+				sprintf_s(stringBuffer, bufferSize, "%d", pair.Value);
 
 				TX_RECT bounds;
-				bounds.X = region.bounds.left;
-				bounds.Y = region.bounds.top;
-				bounds.Width = region.bounds.right - region.bounds.left;
-				bounds.Height = region.bounds.bottom - region.bounds.top;
+				bounds.X = TopLeft.X;
+				bounds.Y = TopLeft.Y;
+				bounds.Width = BottomRight.X - TopLeft.X;
+				bounds.Height = BottomRight.Y - TopLeft.Y;
 
 				txCreateRectangularInteractor(hSnapshot, &hInteractor, stringBuffer, &bounds, TX_LITERAL_ROOTID, windowIdString);
 				txSetActivatableBehavior(hInteractor, &params);
@@ -293,20 +343,31 @@ void FEyeXEyetracking::OnActivationFocusChanged(TX_HANDLE hBehavior, int interac
 	TX_ACTIVATIONFOCUSCHANGEDEVENTPARAMS eventData;
 	if (txGetActivationFocusChangedEventParams(hBehavior, &eventData) == TX_RESULT_OK)
 	{
+		auto prevFocusedInteractor = _focusedInteractor;
+		if (prevFocusedInteractor != nullptr)
+			prevFocusedInteractor->LostFocus();
+
 		if (eventData.HasActivationFocus)
 		{
-			FocusedRegionChangedEvent.Broadcast(interactorId);
+			_focusedInteractor = _idToInteractor[interactorId];
+			if (prevFocusedInteractor != _focusedInteractor)
+				_focusedInteractor->GotFocus();
 		}
 		else
 		{
-			FocusedRegionChangedEvent.Broadcast(-1);
+			_focusedInteractor = nullptr;
 		}
+
+		FocusedRegionChangedEvent.Broadcast(_focusedInteractor);
 	}
 }
 
 void FEyeXEyetracking::OnActivated(TX_HANDLE hBehavior, int interactorId)
 {
-	RegionActivatedEvent.Broadcast(interactorId);
+	auto interactor = _idToInteractor[interactorId];
+	interactor->Activate();
+	RegionActivatedEvent.Broadcast(*interactor);
+
 }
 
 void TX_CALLCONVENTION FEyeXEyetracking::OnSnapshotCommitted(TX_CONSTHANDLE hAsyncData, TX_USERPARAM param)

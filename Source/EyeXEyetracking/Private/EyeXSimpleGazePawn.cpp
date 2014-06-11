@@ -9,6 +9,7 @@ DEFINE_LOG_CATEGORY_STATIC(GameLog, All, All);
 AEyeXSimpleGazePawn::AEyeXSimpleGazePawn(const FPostConstructInitializeProperties& PCIP)
 : Super(PCIP)
 {
+	AEyeXSimpleGazePawn::StaticClass();
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -58,15 +59,13 @@ void AEyeXSimpleGazePawn::Tick(float DeltaSeconds)
 void AEyeXSimpleGazePawn::OnGazeData(const FVector2D& GazePoint)
 {
 	bool success = false;
-	auto playerController = Cast<APlayerController>(Controller);
-	ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(playerController->Player);
 
-	if (LocalPlayer == NULL || LocalPlayer->ViewportClient == NULL || LocalPlayer->ViewportClient->Viewport == NULL)
+	if (GEngine->GameViewport == NULL || GEngine->GameViewport->Viewport == NULL)
 		return;
-
+	
 	FIntPoint MyNewPoint;
 	FIntPoint OutPoint = FIntPoint(GazePoint.X, GazePoint.Y);
-	success = LocalPlayer->ViewportClient->Viewport->OperatingSystemPixelToViewportPixel(&OutPoint, MyNewPoint);
+	success = GEngine->GameViewport->Viewport->OperatingSystemPixelToViewportPixel(&OutPoint, MyNewPoint);
 	UE_LOG(GameLog, Log, TEXT("pos: %i %i"), MyNewPoint.X, MyNewPoint.Y);
 
 	if (!success)

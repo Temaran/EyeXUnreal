@@ -40,6 +40,7 @@ Then, to use this plugin:
 3. Clone / copy this repo to that subfolder
 4. Download the EyeX SDK and put the libs/includes in the ThirdParty/EyeX/ folder. More directions for that in that folder
 5. Put the relevant client dll into the Binaries/PLATFORM/ subfolder. if x64, use the x64 version of Tobii.EyeX.Client.dll and conversely for x86. You can find the dll in the ThirdParty/EyeX/lib/PLATFORM/ folders
+   5.b  At the moment, working directory is a bit wonky, so you will have to add this to the Engine/Binaries/... folder as well until I find a workaround
 6. Regenerate your solution using the UE4 shell extension
 7. Build the project
 8. Start the editor and open the plugin viewer (can be found under the windows->Plugins menu)

@@ -34,13 +34,17 @@ public:
 	DECLARE_DERIVED_EVENT(FEyeXEyetracking, IEyeXEyetracking::FRegionActivatedEvent, FRegionActivatedEvent);  //parameter is the id
 	virtual FRegionActivatedEvent& OnRegionActivated() OVERRIDE{ return RegionActivatedEvent; }
 
-	virtual int GetNextUniqueRegionId() OVERRIDE;
+	virtual void AddInteractor(IEyeXInteractorInterface& newInteractor) OVERRIDE;
+	virtual void RemoveInteractor(IEyeXInteractorInterface& interactorToRemove) OVERRIDE;
 
-	virtual void AddActivatableRegion(ActivatableRegion& newRegions) OVERRIDE;
-	virtual void RemoveActivatableRegion(const ActivatableRegion& region) OVERRIDE;
+	virtual void SetSceneViewProvider(IEyeXSceneViewProviderInterface* NewProvider) OVERRIDE;
+
+	virtual IEyeXInteractorInterface* GetFocusedInteractor() OVERRIDE;
+
 	virtual void TriggerActivation() OVERRIDE;
 
 private:
+	void* DLLHandle;
 	// registers handlers for notifications from the engine.
 	bool RegisterConnectionStateChangedHandler();
 	bool RegisterQueryHandler();
@@ -56,6 +60,8 @@ private:
 	BOOL InitializeGlobalInteractorSnapshot(TX_CONTEXTHANDLE hContext);
 	void OnGazeDataEvent(TX_HANDLE hGazeDataBehavior);
 
+	int GetNextUniqueRegionId();
+
 	// callback function invoked when a snapshot has been committed.
 	static void TX_CALLCONVENTION OnSnapshotCommitted(TX_CONSTHANDLE hAsyncData, TX_USERPARAM param);
 
@@ -65,7 +71,11 @@ private:
 	// (for example, a call to SetActivatableRegions from the main thread while the HandleQuery 
 	// method is iterating through the regions on a worker thread.)
 	std::mutex _mutex;
-	std::vector<ActivatableRegion> _regions;
+	TMap<IEyeXInteractorInterface*, int> _interactorToId;
+	TMap<int, IEyeXInteractorInterface*> _idToInteractor;
+	IEyeXInteractorInterface* _focusedInteractor;
+	IEyeXSceneViewProviderInterface* _sceneViewProvider;
+
 	TX_CONTEXTHANDLE _context;
 	TX_TICKET _connectionStateChangedTicket;
 	TX_TICKET _queryHandlerTicket;

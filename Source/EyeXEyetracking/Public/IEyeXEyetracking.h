@@ -12,6 +12,8 @@
 #pragma once
 
 #include "ModuleManager.h"
+#include "EyeXInteractorInterface.h"
+#include "EyeXSceneViewProviderInterface.h"
 #include "eyex/EyeX.h"
 #include "EyeXEyetrackingTypes.h"
 
@@ -46,27 +48,34 @@ public:
 
 
 	/**
-	Public API
-	*/
+	 *Public API
+	 */
 	
 	DECLARE_EVENT_OneParam(IEyeXEyetracking, FNewGazeDataEvent, const FVector2D&);   //parameter is the gaze point
 	virtual FNewGazeDataEvent& OnNewGazeData() = 0;
 
-	DECLARE_EVENT_OneParam(IEyeXEyetracking, FStatusChangedEvent, const bool&);   //parameter is whether it is connected or not
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FStatusChangedEvent, const bool&);   //parameter is whether the tracker is connected or not
 	virtual FStatusChangedEvent& OnStatusChanged() = 0;
 
-	DECLARE_EVENT_OneParam(IEyeXEyetracking, FFocusedRegionChangedEvent, const int&);    //parameter is the new focused id
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FFocusedRegionChangedEvent, IEyeXInteractorInterface const * const);    //parameter is the new focused interactor
 	virtual FFocusedRegionChangedEvent& OnFocusedRegionChanged() = 0;
 
-	DECLARE_EVENT_OneParam(IEyeXEyetracking, FRegionActivatedEvent, const int&);  //parameter is the id
+	DECLARE_EVENT_OneParam(IEyeXEyetracking, FRegionActivatedEvent, const IEyeXInteractorInterface&);  //parameter is the interactor
 	virtual FRegionActivatedEvent& OnRegionActivated() = 0;
 	
+	virtual void AddInteractor(IEyeXInteractorInterface& newInteractor) = 0;
+	virtual void RemoveInteractor(IEyeXInteractorInterface& interactorToRemove) = 0;
+
 	/**
-	 * When defining a new Activatable region, use this function to get a guaranteed unique id for it
+	  * This function returns a map of all registered interactors and their regions
+	  */
+	virtual void SetSceneViewProvider(IEyeXSceneViewProviderInterface* NewProvider) = 0;
+
+	/**
+	 * You can use this function to query which interactor currently has focus, if any.
+	 * @returns NULL if no interactor has focus, otherwise a pointer to the focused interactor
 	 */
-	virtual int GetNextUniqueRegionId() = 0;
-	virtual void AddActivatableRegion(ActivatableRegion& newRegions) = 0;
-	virtual void RemoveActivatableRegion(const ActivatableRegion& region) = 0;
+	virtual IEyeXInteractorInterface* GetFocusedInteractor() = 0;
 
 	// triggers an activation ("Direct Click").
 	// use this method if you want to bind the click command to a key other than the one used by 

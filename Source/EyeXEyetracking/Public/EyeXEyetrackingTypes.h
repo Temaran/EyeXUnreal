@@ -36,13 +36,3 @@ public:
 		return !bDoNotOverlap;
 	}
 };
-
-
-// Represents an activatable region, that is, one particular kind of interactor.
-struct ActivatableRegion
-{
-	int id;
-	RECT bounds;
-
-	ActivatableRegion(int paramId, RECT paramBounds) : id(paramId), bounds(paramBounds) { }
-};
