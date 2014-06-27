@@ -1,5 +1,4 @@
 #include "EyeXSceneViewProviderInterface.generated.h"
-
 #pragma once
 
 /** Interface for actors that are interactable */

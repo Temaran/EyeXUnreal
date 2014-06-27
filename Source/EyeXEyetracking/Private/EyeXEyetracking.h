@@ -83,10 +83,22 @@ private:
 	TX_STRING _globalInteractorId = "EyeXUnreal";
 	TX_HANDLE _hGlobalInteractorSnapshot = TX_EMPTY_HANDLE;
 
+	UPROPERTY()
 	FNewGazeDataEvent NewGazeDataEvent;
+	UPROPERTY()
 	FStatusChangedEvent StatusChangedEvent;
+	UPROPERTY()
 	FFocusedRegionChangedEvent FocusedRegionChangedEvent;
+	UPROPERTY()
 	FRegionActivatedEvent RegionActivatedEvent;
+
+	// For calculating averaged gaze point
+	static const int NUM_GAZEPOINTS = 5;
+	static const FVector2D InfVector;
+	FVector2D GazePoints[NUM_GAZEPOINTS];
+	
+	int CurrentIndex;
+	
 };
 
 IMPLEMENT_MODULE(FEyeXEyetracking, EyeXEyetracking)

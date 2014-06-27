@@ -1,4 +1,4 @@
-// THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
+ // THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
 // KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 // PARTICULAR PURPOSE.
@@ -51,9 +51,9 @@ public:
 	 *Public API
 	 */
 	
-	DECLARE_EVENT_OneParam(IEyeXEyetracking, FNewGazeDataEvent, const FVector2D&);   //parameter is the gaze point
+	DECLARE_EVENT_FourParams(IEyeXEyetracking, FNewGazeDataEvent, const FVector2D&, const FVector2D&, const FVector&, const FVector&);   //First parameter is the gaze point, second is an averaged gaze point, third is the world origin, fourth is the world direction
 	virtual FNewGazeDataEvent& OnNewGazeData() = 0;
-
+	
 	DECLARE_EVENT_OneParam(IEyeXEyetracking, FStatusChangedEvent, const bool&);   //parameter is whether the tracker is connected or not
 	virtual FStatusChangedEvent& OnStatusChanged() = 0;
 

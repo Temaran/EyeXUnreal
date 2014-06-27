@@ -11,11 +11,17 @@
 
 #include "EyeXEyetrackingPrivatePCH.h"
 #include "EyeXEyetracking.h"
+#include <limits>
 
 DEFINE_LOG_CATEGORY_STATIC(EyetrackingLog, All, All);
 
+float Inf = std::numeric_limits<float>::infinity();
+const FVector2D FEyeXEyetracking::InfVector = FVector2D(Inf, Inf);
+
 void FEyeXEyetracking::StartupModule()
 {
+	_sceneViewProvider = NULL;
+
 	// initialize the EyeX Engine client library.
 	txInitializeSystem(TX_SYSTEMCOMPONENTOVERRIDEFLAG_NONE, nullptr, nullptr, nullptr);
 
@@ -30,6 +36,12 @@ void FEyeXEyetracking::StartupModule()
 	{
 		StatusChangedEvent.Broadcast(false);
 	}
+
+	for (int i = 0; i < NUM_GAZEPOINTS; i++)
+	{
+		GazePoints[i] = InfVector;
+	}
+	CurrentIndex = 0;
 }
 
 void FEyeXEyetracking::ShutdownModule()
@@ -42,6 +54,7 @@ void FEyeXEyetracking::ShutdownModule()
 		txShutdownContext(_context, TX_CLEANUPTIMEOUT_DEFAULT, TX_FALSE);
 		txReleaseContext(&_context);
 	}
+	_sceneViewProvider = NULL;
 }
 
 
@@ -219,13 +232,13 @@ void FEyeXEyetracking::HandleQuery(TX_CONSTHANDLE hAsyncData)
 			FSceneView* SceneView = _sceneViewProvider->GetSceneView();			
 
 			FVector2D ExtentPoints[8];
-			SceneView->WorldToPixel(Origin + FVector(Extents.X, Extents.Y, Extents.Z), ExtentPoints[0]); //Right Top Front
-			SceneView->WorldToPixel(Origin + FVector(Extents.X, Extents.Y, -Extents.Z), ExtentPoints[1]); //Right Top Back
-			SceneView->WorldToPixel(Origin + FVector(Extents.X, -Extents.Y, Extents.Z), ExtentPoints[2]); //Right Bottom Front
-			SceneView->WorldToPixel(Origin + FVector(Extents.X, -Extents.Y, -Extents.Z), ExtentPoints[3]); //Right Bottom Back
-			SceneView->WorldToPixel(Origin + FVector(-Extents.X, Extents.Y, Extents.Z), ExtentPoints[4]); //Left Top Front
-			SceneView->WorldToPixel(Origin + FVector(-Extents.X, Extents.Y, -Extents.Z), ExtentPoints[5]); //Left Top Back
-			SceneView->WorldToPixel(Origin + FVector(-Extents.X, -Extents.Y, Extents.Z), ExtentPoints[6]); //Left Bottom Front
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, Extents.Y, Extents.Z), ExtentPoints[0]);	//Right Top Front
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, Extents.Y, -Extents.Z), ExtentPoints[1]);	//Right Top Back
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, -Extents.Y, Extents.Z), ExtentPoints[2]);	//Right Bottom Front
+			SceneView->WorldToPixel(Origin + FVector(Extents.X, -Extents.Y, -Extents.Z), ExtentPoints[3]);	//Right Bottom Back
+			SceneView->WorldToPixel(Origin + FVector(-Extents.X, Extents.Y, Extents.Z), ExtentPoints[4]);	//Left Top Front
+			SceneView->WorldToPixel(Origin + FVector(-Extents.X, Extents.Y, -Extents.Z), ExtentPoints[5]);	//Left Top Back
+			SceneView->WorldToPixel(Origin + FVector(-Extents.X, -Extents.Y, Extents.Z), ExtentPoints[6]);	//Left Bottom Front
 			SceneView->WorldToPixel(Origin + FVector(-Extents.X, -Extents.Y, -Extents.Z), ExtentPoints[7]); //Left Bottom Back
 
 			FVector2D TopLeft = FVector2D(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
@@ -279,9 +292,9 @@ void FEyeXEyetracking::HandleEvent(TX_CONSTHANDLE hAsyncData)
 
 	// NOTE. Uncomment the following line of code to view the event object. The same function can be used with any interaction object.
 	//OutputDebugStringA(txDebugObject(hEvent));
-
-
-	if (txGetEventBehavior(hEvent, &hBehavior, TX_INTERACTIONBEHAVIORTYPE_GAZEPOINTDATA) == TX_RESULT_OK) {
+	
+	if (txGetEventBehavior(hEvent, &hBehavior, TX_INTERACTIONBEHAVIORTYPE_GAZEPOINTDATA) == TX_RESULT_OK)
+	{
 		OnGazeDataEvent(hBehavior);
 		txReleaseObject(&hBehavior);
 	}
@@ -305,10 +318,43 @@ void FEyeXEyetracking::OnGazeDataEvent(TX_HANDLE hGazeDataBehavior)
 	TX_GAZEPOINTDATAEVENTPARAMS eventParams;
 	if (txGetGazePointDataEventParams(hGazeDataBehavior, &eventParams) == TX_RESULT_OK)
 	{
-		//UE_LOG(EyetrackingLog, Error, TEXT("Gaze Data: (%.1f, %.1f) timestamp %.0f ms\n"), eventParams.X, eventParams.Y, eventParams.Timestamp);
+		// Return if data is NaN
+		if (FMath::IsNaN(eventParams.X) || FMath::IsNaN(eventParams.Y))
+			return;
 
-		FVector2D gazeData(eventParams.X, eventParams.Y);
-		NewGazeDataEvent.Broadcast(gazeData);
+		FVector2D GazeData(eventParams.X, eventParams.Y);
+
+		if (GEngine == NULL || GEngine->GameViewport == NULL || GEngine->GameViewport->Viewport == NULL)
+			return;
+
+		FIntPoint TransformedPoint;
+		FIntPoint OsPoint = FIntPoint(GazeData.X, GazeData.Y);
+		if (!GEngine->GameViewport->Viewport->OperatingSystemPixelToViewportPixel(&OsPoint, TransformedPoint))
+			return;
+
+		GazePoints[CurrentIndex] = TransformedPoint;
+		CurrentIndex = (CurrentIndex + 1) % NUM_GAZEPOINTS;
+
+		FVector WorldOrigin;
+		FVector WorldDirection;
+
+		FVector2D SumVector = FVector2D::ZeroVector;
+		int NumValidGazePoints = 0;
+		for (int i = 0; i < NUM_GAZEPOINTS; i++)
+		{
+			if (GazePoints[i] == InfVector) continue;
+			NumValidGazePoints++;
+			SumVector += GazePoints[i];
+		}
+		FVector2D AveragedPoint = SumVector / (float)NumValidGazePoints;
+// 		if (NULL != _sceneViewProvider)
+// 		{
+// 			FSceneView* SceneView = _sceneViewProvider->GetSceneView();
+// 			FVector2D TransformedPointVector(TransformedPoint.X, TransformedPoint.Y);
+// 			SceneView->DeprojectFVector2D(TransformedPointVector, WorldOrigin, WorldDirection);
+// 		}
+// 		UE_LOG(EyetrackingLog, Log, TEXT("Gaze Data: (%.1f : %.1f) Transformed: (%s) Eye world pos: (%s) Eye world direction: (%s) timestamp %.0f ms\n"), eventParams.X, eventParams.Y, *TransformedPoint.ToString(), *WorldOrigin.ToString(), *WorldDirection.ToString(), eventParams.Timestamp);
+ 		NewGazeDataEvent.Broadcast(TransformedPoint, AveragedPoint, WorldOrigin, WorldDirection);
 	}
 	else
 	{

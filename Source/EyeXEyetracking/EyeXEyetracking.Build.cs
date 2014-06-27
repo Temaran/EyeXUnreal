@@ -27,6 +27,9 @@ namespace UnrealBuildTool.Rules
 
 		public EyeXEyetracking(TargetInfo Target)
 		{
+            MinFilesUsingPrecompiledHeaderOverride = 1;
+            bFasterWithoutUnity = true;
+
 			PublicIncludePaths.AddRange(
 				new string[] {
                     "EyeXEyetracking/Public"
