@@ -318,7 +318,6 @@ void FEyeXEyetracking::OnGazeDataEvent(TX_HANDLE hGazeDataBehavior)
 	TX_GAZEPOINTDATAEVENTPARAMS eventParams;
 	if (txGetGazePointDataEventParams(hGazeDataBehavior, &eventParams) == TX_RESULT_OK)
 	{
-		// Return if data is NaN
 		if (FMath::IsNaN(eventParams.X) || FMath::IsNaN(eventParams.Y))
 			return;
 
@@ -335,11 +334,9 @@ void FEyeXEyetracking::OnGazeDataEvent(TX_HANDLE hGazeDataBehavior)
 		GazePoints[CurrentIndex] = TransformedPoint;
 		CurrentIndex = (CurrentIndex + 1) % NUM_GAZEPOINTS;
 
-		FVector WorldOrigin;
-		FVector WorldDirection;
-
 		FVector2D SumVector = FVector2D::ZeroVector;
 		int NumValidGazePoints = 0;
+		
 		for (int i = 0; i < NUM_GAZEPOINTS; i++)
 		{
 			if (GazePoints[i] == InfVector) continue;
@@ -347,14 +344,7 @@ void FEyeXEyetracking::OnGazeDataEvent(TX_HANDLE hGazeDataBehavior)
 			SumVector += GazePoints[i];
 		}
 		FVector2D AveragedPoint = SumVector / (float)NumValidGazePoints;
-// 		if (NULL != _sceneViewProvider)
-// 		{
-// 			FSceneView* SceneView = _sceneViewProvider->GetSceneView();
-// 			FVector2D TransformedPointVector(TransformedPoint.X, TransformedPoint.Y);
-// 			SceneView->DeprojectFVector2D(TransformedPointVector, WorldOrigin, WorldDirection);
-// 		}
-// 		UE_LOG(EyetrackingLog, Log, TEXT("Gaze Data: (%.1f : %.1f) Transformed: (%s) Eye world pos: (%s) Eye world direction: (%s) timestamp %.0f ms\n"), eventParams.X, eventParams.Y, *TransformedPoint.ToString(), *WorldOrigin.ToString(), *WorldDirection.ToString(), eventParams.Timestamp);
- 		NewGazeDataEvent.Broadcast(TransformedPoint, AveragedPoint, WorldOrigin, WorldDirection);
+ 		NewGazeDataEvent.Broadcast(TransformedPoint, AveragedPoint);
 	}
 	else
 	{
