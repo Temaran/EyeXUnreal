@@ -1,3 +1,25 @@
+Update:
+Tobii Technology picked up the plugin and refined it to super good quality, so I recommend using this repo over this one for anyone who is interested:
+
+https://github.com/TobiiTechnology/EyeXforUE4/
+
+
+/Temaran
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Initial info:
 Currently, for this plugin to work, you need to do some changes to the core source, this will not change until I can get Epic to pull these changes :)
 For more info on the changes see:
